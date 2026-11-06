@@ -1,0 +1,32 @@
+/* Panels become drawers as space narrows; chat stays the primary surface. */
+.panel-toggle { display: none; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); color: var(--text-primary); }
+.panel-backdrop { display: none; position: fixed; inset: 64px 0 0; background: rgb(0 0 0 / 55%); z-index: 20; border: 0; }
+
+@media (max-width: 1200px) {
+  #app { grid-template-columns: 248px minmax(0, 1fr); }
+  .sources-toggle { display: inline-flex; }
+  .rag-sources { display: none; position: fixed; top: 64px; right: 0; bottom: 0; width: min(340px, 90vw); z-index: 30; box-shadow: -12px 0 40px rgb(0 0 0 / 20%); }
+  .sources-open .rag-sources { display: flex; }
+  .sources-open .panel-backdrop { display: block; }
+}
+
+@media (max-width: 760px) {
+  #app { grid-template-columns: minmax(0, 1fr); }
+  .panel-toggle { display: inline-flex; }
+  .rag-sidebar { display: none; position: fixed; top: 64px; left: 0; bottom: 0; width: min(300px, 90vw); z-index: 30; box-shadow: 12px 0 40px rgb(0 0 0 / 20%); }
+  .sidebar-open .rag-sidebar { display: flex; }
+  .sidebar-open .panel-backdrop { display: block; }
+  .chat-topbar { padding: 0 12px; gap: 8px; }
+  .chat-topbar-title, .api-status, .input-hint { display: none; }
+  .ws-pill { max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat-msgs { padding: 24px 16px; }
+  .chat-input-area { padding: 12px 12px max(12px, env(safe-area-inset-bottom)); }
+  .input-actions { gap: 8px; }
+  .btn-web-search { margin-right: auto; }
+  .message-body { max-width: calc(100% - 42px); }
+  .btn-summarize-top { padding: 8px; font-size: 11px; white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

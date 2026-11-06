@@ -7,7 +7,7 @@ Chatbot hỏi đáp tài liệu học tập, hỗ trợ nhiều workspace, tríc
 ## Kiến trúc tổng quan
 
 ```
-Browser (frontend/index.html)  ──(HTTP/REST + Session Cookie)──►  FastAPI Backend
+Browser (frontend/index.html + assets/)  ──(HTTP/REST + Session Cookie)──►  FastAPI Backend
      │  Vanilla HTML/CSS/JS (SPA)                                        │
      ├─ Đăng nhập Google (OAuth2)                                        ├──► ChromaDB (Persistent, ./chroma_db)
      ├─ Sidebar: Workspaces + Lịch sử chat                                ├──► Gemini API (LLM + Embedding)
@@ -24,7 +24,7 @@ Backend gồm 4 module chính, mỗi module do một thành viên phụ trách:
 | Parsing & Chunking | `src/data/parser.py` | Thùy |
 | Vector Store & Retrieval | `src/pipeline/retriever.py` | Phi |
 | LLM Generation & Web Search | `src/models/llm_generator.py` | Tiến |
-| API & Frontend | `src/api/api_server.py`, `frontend/index.html` | Mạnh |
+| API & Frontend | `src/api/`, `frontend/` | Mạnh |
 
 ---
 
@@ -38,37 +38,41 @@ Backend gồm 4 module chính, mỗi module do một thành viên phụ trách:
 - **Lịch sử chat theo user**: lưu dưới dạng file JSON, hiển thị dạng sidebar giống ChatGPT.
 - **Trích xuất PDF nâng cao**: nhận diện heading theo font-size/pattern, trích bảng biểu sang Markdown table (PyMuPDF + pdfplumber).
 - **Hybrid Search (tùy chọn)**: kết hợp Vector Search + BM25 bằng Reciprocal Rank Fusion.
-- **Giao diện**: dark theme, hỗ trợ nhập bằng giọng nói (Web Speech API) và đọc to câu trả lời (TTS).
+- **Giao diện**: dark theme responsive, bảng workspace/tài liệu thu gọn trên màn hình nhỏ; vùng chat trống chỉ hiển thị một dòng hướng dẫn. Hỗ trợ nhập bằng giọng nói (Web Speech API) và đọc to câu trả lời (TTS).
 
 ---
 
 ## Cấu trúc thư mục
 
 ```
-pdf-rag-chatbot/
+PDF-Rag-Assistant/
 ├── frontend/
-│   └── index.html          ← MẠNH: Giao diện SPA thuần HTML/CSS/JS (không dùng Streamlit)
+│   ├── index.html            # HTML shell, accessible controls
+│   └── assets/
+│       ├── css/              # base, sidebar, chat, sources, responsive
+│       └── js/               # app, api, state, render, feature modules
 ├── src/
-│   ├── data/
-│   │   └── parser.py        ← THÙY: PDF parsing + chunking + metadata
-│   ├── pipeline/
-│   │   └── retriever.py     ← PHI: ChromaDB persistent + workspace search + hybrid search
-│   ├── models/
-│   │   └── llm_generator.py ← TIẾN: Gemini prompting + citations + web search + embedding
-│   └── api/
-│       └── api_server.py    ← MẠNH: FastAPI endpoints (OAuth2, chat, history, workspace)
-├── chroma_db/                ← Dữ liệu vector lưu persistent (tự sinh khi chạy)
-├── chat_history/              ← Lịch sử chat theo user (tự sinh khi chạy)
-├── configs/
-│   └── config.yaml
-├── notebooks/
+│   ├── api/
+│   │   ├── api_server.py     # App, middleware, router registration, static files
+│   │   ├── config.py         # Environment and absolute project paths
+│   │   ├── dependencies.py   # Current session user
+│   │   ├── schemas.py        # Request/response models
+│   │   ├── history_store.py  # Safe per-user history paths
+│   │   └── routers/          # auth, history, workspaces, documents, chat
+│   ├── data/parser.py        # PDF parsing and chunking
+│   ├── pipeline/retriever.py # ChromaDB and retrieval
+│   └── models/llm_generator.py # Generation, embeddings, web search
+├── tests/                    # API contracts and frontend regressions
+├── docs/architecture.md      # Refactor decisions and remaining findings
 ├── requirements.txt
-├── git_setup.sh
-├── .env                       ← Biến môi trường (không commit)
+├── requirements-dev.txt
 └── README.md
 ```
 
-> Lưu ý: hệ thống **không còn dùng Streamlit** (`src/app/`) — toàn bộ giao diện hiện là một trang tĩnh `frontend/index.html` được FastAPI phục vụ trực tiếp tại `/`.
+Frontend dùng ES modules trực tiếp, không cần bundler hoặc Node để chạy ứng dụng.
+Mở qua FastAPI tại `/`, không mở `index.html` bằng `file://`.
+API được gọi cùng origin, nên dùng được cả localhost và địa chỉ triển khai.
+Các module AI/PDF chỉ được import khi gọi tính năng liên quan; để sử dụng đầy đủ vẫn cần cài toàn bộ `requirements.txt` và cấu hình `.env`.
 
 ---
 
@@ -163,6 +167,18 @@ Mở trình duyệt tại **http://localhost:8000** — FastAPI phục vụ luô
 - **LLM & Embedding**: Google Gemini API (`gemini-2.5-flash-lite` cho sinh câu trả lời, `gemini-embedding-001` cho embedding)
 - **Web Search**: Google Custom Search JSON API
 - **PDF Parsing**: PyMuPDF (text + heading detection theo font-size), pdfplumber (trích bảng biểu → Markdown table)
-- **Frontend**: HTML/CSS/JS thuần (dark theme, không framework), Web Speech API (voice input + TTS)
+- **Frontend**: HTML/CSS/JS thuần, ES modules, CSS tách theo component và responsive; Web Speech API (voice input + TTS).
 
 ---
+
+## Kiểm thử
+
+```bash
+pip install -r requirements-dev.txt
+python -m unittest discover -s tests -p "test_*.py" -v
+node --test tests/frontend.test.mjs
+```
+
+Kiểm thử API dùng mock cho vector store và AI; không gọi dịch vụ bên ngoài.
+Kiểm thử frontend cần Node.js 22+ và dùng DOM giả để kiểm tra các luồng trạng thái.
+Kiểm tra trình duyệt riêng cho bố cục desktop/mobile; các test trên không thay thế kiểm thử OAuth, upload PDF và Gemini thực tế.

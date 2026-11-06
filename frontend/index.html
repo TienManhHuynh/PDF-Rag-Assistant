@@ -3,230 +3,21 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PDF RAG Assistant v3</title>
+  <title>PDF RAG Assistant</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg-base:       #0d0d1a;
-      --bg-sidebar:    #111122;
-      --bg-chat:       #13131f;
-      --bg-panel:      #111122;
-      --bg-elevated:   #1a1a2e;
-      --bg-hover:      #1f1f38;
-      --bg-active:     rgba(139,92,246,.18);
-      --border:        rgba(255,255,255,0.07);
-      --border-accent: rgba(139,92,246,0.35);
-      --accent:        #8b5cf6;
-      --accent-light:  #c4b5fd;
-      --accent-faint:  rgba(139,92,246,0.12);
-      --accent-glow:   rgba(139,92,246,0.08);
-      --text-primary:  #f0efff;
-      --text-secondary: rgba(255,255,255,0.55);
-      --text-muted:    rgba(255,255,255,0.28);
-      --green:  #22c55e;
-      --red:    #ef4444;
-      --blue:   #3b82f6;
-      --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
-    }
-
-    html, body { height:100%; width:100%; font-family:'Inter',-apple-system,sans-serif; font-size:14px; background:var(--bg-base); color:var(--text-primary); overflow:hidden; }
-
-    /* ══ APP SHELL ══ */
-    #app { display:grid; grid-template-columns:248px 1fr 272px; height:100vh; width:100vw; overflow:hidden; }
-
-    /* ══ SIDEBAR ══ */
-    .rag-sidebar { background:var(--bg-sidebar); display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); }
-
-    .sb-logo { padding:13px 14px; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; border-bottom:1px solid var(--border); flex-shrink:0; }
-    .sb-logo-icon { width:28px; height:28px; background:linear-gradient(135deg,rgba(139,92,246,.35),rgba(139,92,246,.15)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; border:1px solid var(--border-accent); }
-
-    /* ── User card (Google login) ── */
-    .user-card { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-    .user-avatar { width:26px; height:26px; border-radius:50%; object-fit:cover; border:1px solid var(--border-accent); flex-shrink:0; }
-    .user-avatar-placeholder { width:26px; height:26px; border-radius:50%; background:var(--bg-elevated); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-muted); flex-shrink:0; }
-    .user-name { flex:1; font-size:11.5px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .btn-auth { font-size:10.5px; padding:3px 8px; border-radius:var(--r-sm); border:1px solid var(--border-accent); background:var(--accent-faint); color:var(--accent-light); cursor:pointer; white-space:nowrap; font-family:inherit; transition:background .12s; }
-    .btn-auth:hover { background:rgba(139,92,246,.28); }
-
-    /* ── Chat History List ── */
-    .sb-section-label { font-size:10px; font-weight:700; letter-spacing:.09em; color:var(--text-muted); text-transform:uppercase; padding:10px 14px 4px; flex-shrink:0; }
-
-    .history-list { overflow-y:auto; padding:2px 8px; flex-shrink:0; max-height:160px; min-height:0; }
-    .history-list::-webkit-scrollbar { width:3px; }
-    .history-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:3px; }
-
-    .hist-item { display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:var(--r-md); cursor:pointer; font-size:11.5px; color:var(--text-secondary); transition:background .1s; margin-bottom:1px; }
-    .hist-item:hover { background:var(--bg-hover); color:var(--text-primary); }
-    .hist-item.active { background:var(--bg-active); color:var(--accent-light); }
-    .hist-item-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .hist-item-del { font-size:12px; opacity:0; transition:opacity .1s; padding:0 2px; }
-    .hist-item:hover .hist-item-del { opacity:0.6; }
-    .hist-item-del:hover { opacity:1 !important; color:var(--red); }
-    .hist-new-btn { width:100%; display:flex; align-items:center; gap:6px; padding:5px 8px 6px 8px; border-radius:var(--r-md); background:transparent; border:none; color:var(--text-muted); font-size:11.5px; cursor:pointer; font-family:inherit; transition:background .1s, color .1s; }
-    .hist-new-btn:hover { background:var(--bg-hover); color:var(--accent-light); }
-
-    .sb-divider { border:none; border-top:1px solid var(--border); margin:4px 12px; flex-shrink:0; }
-
-    /* ── Workspace list ── */
-    .ws-list { flex:1; overflow-y:auto; padding:3px 8px; min-height:0; }
-    .ws-list::-webkit-scrollbar { width:3px; }
-    .ws-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:3px; }
-    .ws-item { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--r-md); cursor:pointer; font-size:12.5px; color:var(--text-secondary); transition:background .12s,color .12s; margin-bottom:1px; user-select:none; }
-    .ws-item:hover { background:var(--bg-hover); color:var(--text-primary); }
-    .ws-item.active { background:var(--bg-active); color:var(--accent-light); }
-    .ws-item-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ws-item-count { font-size:10px; padding:1px 6px; border-radius:10px; background:rgba(255,255,255,.07); color:var(--text-muted); flex-shrink:0; }
-    .ws-item.active .ws-item-count { background:rgba(139,92,246,.22); color:var(--accent-light); }
-    .ws-empty-hint { padding:8px 12px; font-size:11.5px; color:var(--text-muted); }
-
-    .create-ws { padding:5px 8px 6px; display:flex; gap:5px; flex-shrink:0; }
-    .create-ws input { flex:1; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:6px 9px; font-size:12px; color:var(--text-primary); outline:none; font-family:inherit; transition:border-color .15s; }
-    .create-ws input::placeholder { color:var(--text-muted); }
-    .create-ws input:focus { border-color:var(--accent); }
-    .btn-new-ws { background:var(--accent-faint); border:1px solid var(--border-accent); border-radius:var(--r-sm); color:var(--accent-light); font-size:18px; line-height:1; width:32px; cursor:pointer; transition:background .12s; flex-shrink:0; }
-    .btn-new-ws:hover { background:rgba(139,92,246,.28); }
-
-    .upload-zone { margin:4px 8px; border:1.5px dashed var(--border-accent); border-radius:var(--r-md); padding:11px 8px; text-align:center; cursor:pointer; transition:background .12s,border-color .12s; flex-shrink:0; }
-    .upload-zone:hover,.upload-zone.dragover { background:var(--accent-glow); border-color:var(--accent); }
-    .upload-zone .uz-icon { font-size:18px; margin-bottom:3px; }
-    .upload-zone p { font-size:11px; color:var(--text-muted); line-height:1.5; }
-    .upload-zone p span { color:var(--accent-light); text-decoration:underline; }
-    .upload-progress { margin:0 8px 2px; display:none; flex-shrink:0; }
-    .upload-progress.show { display:block; }
-    .progress-bar-wrap { height:3px; background:rgba(255,255,255,.07); border-radius:4px; overflow:hidden; margin-bottom:4px; }
-    .progress-bar { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-light)); border-radius:4px; transition:width .3s ease; }
-    .progress-label { font-size:10.5px; color:var(--text-muted); text-align:center; }
-    .upload-toast { margin:0 8px 4px; padding:6px 10px; border-radius:var(--r-sm); font-size:11.5px; background:rgba(139,92,246,.14); color:var(--accent-light); display:none; flex-shrink:0; line-height:1.4; }
-    .upload-toast.show { display:block; }
-    .upload-toast.error { background:rgba(220,60,60,.12); color:#fca5a5; }
-    .sb-tools { padding:5px 8px 10px; flex-shrink:0; }
-    .tool-btn { width:100%; display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--r-md); background:transparent; border:none; color:var(--text-muted); font-size:12.5px; cursor:pointer; text-align:left; transition:background .12s,color .12s; font-family:inherit; margin-bottom:1px; }
-    .tool-btn:hover { background:var(--bg-hover); color:var(--text-secondary); }
-    .tool-btn.danger:hover { background:rgba(220,60,60,.1); color:#fca5a5; }
-
-    /* ══ CHAT ══ */
-    .rag-chat { display:flex; flex-direction:column; background:var(--bg-chat); overflow:hidden; border-left:1px solid var(--border); border-right:1px solid var(--border); }
-
-    .chat-topbar { padding:11px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; background:var(--bg-chat); }
-    .chat-topbar-title { font-size:13.5px; font-weight:600; color:var(--text-primary); }
-    .ws-pill { font-size:11.5px; background:var(--accent-faint); color:var(--accent-light); padding:3px 10px; border-radius:20px; border:1px solid var(--border-accent); font-weight:500; }
-    .topbar-spacer { flex:1; }
-    .btn-summarize-top { display:flex; align-items:center; gap:5px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:5px 11px; color:var(--text-secondary); font-size:12px; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
-    .btn-summarize-top:hover { background:var(--bg-hover); color:var(--accent-light); border-color:var(--border-accent); }
-    .api-status { font-size:10.5px; display:flex; align-items:center; gap:4px; color:var(--text-muted); }
-    .api-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.18); transition:background .3s; }
-    .api-dot.ok { background:var(--green); }
-    .api-dot.err { background:var(--red); }
-
-    .chat-msgs { flex:1; overflow-y:auto; padding:20px 22px; display:flex; flex-direction:column; gap:16px; }
-    .chat-msgs::-webkit-scrollbar { width:4px; }
-    .chat-msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:4px; }
-
-    .welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; text-align:center; }
-    .welcome .w-icon { font-size:40px; opacity:.35; }
-    .welcome h2 { font-size:16px; font-weight:500; color:var(--text-secondary); }
-    .welcome p { font-size:12.5px; max-width:260px; line-height:1.65; color:var(--text-muted); }
-    .welcome strong { color:var(--accent-light); }
-    .welcome-chips { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:4px; max-width:320px; }
-    .welcome-chip { font-size:11.5px; background:var(--bg-elevated); border:1px solid var(--border); color:var(--text-secondary); padding:5px 12px; border-radius:20px; cursor:pointer; transition:background .12s,border-color .12s,color .12s; }
-    .welcome-chip:hover { background:var(--bg-hover); border-color:var(--border-accent); color:var(--accent-light); }
-
-    .msg { display:flex; gap:10px; align-items:flex-start; }
-    .msg.user { flex-direction:row-reverse; }
-    .av { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; }
-    .av.bot { background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(139,92,246,.1)); color:var(--accent-light); font-size:13px; border:1px solid var(--border-accent); }
-    .av.user { background:var(--bg-elevated); color:var(--accent-light); border:1px solid var(--border); }
-    .bub { max-width:76%; padding:10px 14px; line-height:1.7; font-size:13px; color:var(--text-primary); }
-    .bub.bot { background:var(--bg-elevated); border:1px solid var(--border); border-radius:3px 14px 14px 14px; }
-    .bub.user { background:var(--bg-active); border:1px solid var(--border-accent); border-radius:14px 3px 14px 14px; color:var(--accent-light); }
-    .bub.web-tag::before { content:'🌐 Web Search · '; font-size:10px; color:var(--blue); font-weight:600; }
-
-    .cite-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
-    .cite-chip { font-size:11px; background:rgba(139,92,246,.1); color:var(--accent-light); border:1px solid var(--border-accent); border-radius:var(--r-sm); padding:2px 9px; cursor:pointer; font-weight:500; transition:background .1s; }
-    .cite-chip:hover { background:rgba(139,92,246,.22); }
-    .web-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
-    .web-chip { font-size:10.5px; background:rgba(59,130,246,.1); color:#93c5fd; border:1px solid rgba(59,130,246,.3); border-radius:var(--r-sm); padding:2px 8px; cursor:pointer; }
-    .web-chip:hover { background:rgba(59,130,246,.2); }
-
-    .typing { display:flex; gap:4px; align-items:center; padding:10px 14px; }
-    .typing span { width:6px; height:6px; border-radius:50%; background:var(--accent); display:block; animation:tdot 1.2s infinite ease-in-out; opacity:.6; }
-    .typing span:nth-child(2) { animation-delay:.2s; }
-    .typing span:nth-child(3) { animation-delay:.4s; }
-    @keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:.6} 30%{transform:translateY(-5px);opacity:1} }
-
-    /* ── Input area ── */
-    .chat-input-area { flex-shrink:0; padding:10px 18px 14px; background:var(--bg-chat); }
-    .chat-input-box { display:flex; flex-direction:column; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 12px 8px; transition:border-color .15s,box-shadow .15s; }
-    .chat-input-box:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(139,92,246,.08); }
-    .chat-input-box textarea { background:transparent; border:none; outline:none; font-size:13.5px; color:var(--text-primary); resize:none; font-family:inherit; line-height:1.55; max-height:120px; min-height:22px; margin-bottom:6px; }
-    .chat-input-box textarea::placeholder { color:var(--text-muted); }
-    .input-actions { display:flex; align-items:center; gap:6px; }
-    .input-hint { font-size:11px; color:var(--text-muted); flex:1; }
-
-    /* Web Search toggle button */
-    .btn-web-search { display:flex; align-items:center; gap:4px; padding:4px 9px; border-radius:var(--r-sm); border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:11px; cursor:pointer; font-family:inherit; transition:all .15s; white-space:nowrap; }
-    .btn-web-search.active { background:rgba(59,130,246,.15); border-color:rgba(59,130,246,.4); color:#93c5fd; }
-    .btn-web-search:hover { border-color:rgba(59,130,246,.4); color:#93c5fd; }
-
-    /* Voice button */
-    .btn-voice { width:30px; height:30px; border-radius:var(--r-sm); border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all .15s; flex-shrink:0; }
-    .btn-voice:hover { border-color:var(--border-accent); color:var(--accent-light); }
-    .btn-voice.recording { background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.5); color:var(--red); animation:pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-
-    /* TTS button on messages */
-    .btn-tts { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 5px; border-radius:4px; color:var(--text-muted); transition:color .1s,background .1s; vertical-align:middle; }
-    .btn-tts:hover { color:var(--accent-light); background:var(--accent-faint); }
-    .btn-tts.speaking { color:var(--accent-light); }
-
-    .btn-send { background:var(--accent); border:none; border-radius:var(--r-sm); width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:opacity .15s; }
-    .btn-send:hover { opacity:.85; }
-    .btn-send:disabled { background:rgba(139,92,246,.25); cursor:not-allowed; }
-    .btn-send svg { width:13px; height:13px; fill:#fff; }
-
-    /* ══ SOURCES PANEL ══ */
-    .rag-sources { background:var(--bg-panel); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
-    .src-header { padding:11px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; flex-shrink:0; }
-    .src-header-title { font-size:12.5px; font-weight:600; color:var(--text-primary); flex:1; }
-    .src-badge { font-size:10px; padding:2px 7px; border-radius:10px; background:rgba(255,255,255,.06); color:var(--text-muted); }
-    .src-list { flex:1; overflow-y:auto; padding:8px; min-height:0; }
-    .src-list::-webkit-scrollbar { width:3px; }
-    .src-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.07); border-radius:3px; }
-    .src-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:8px; color:var(--text-muted); font-size:11.5px; text-align:center; padding:20px; line-height:1.55; }
-    .src-empty-icon { font-size:28px; opacity:.35; }
-    .src-card { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-md); padding:10px 11px; margin-bottom:6px; cursor:pointer; transition:border-color .12s,background .12s; }
-    .src-card:hover { border-color:var(--border-accent); }
-    .src-card.active { border-color:var(--accent); background:var(--accent-faint); }
-    .src-card-name { font-size:11.5px; font-weight:500; color:var(--text-primary); display:flex; align-items:center; gap:5px; margin-bottom:4px; }
-    .pdf-ico { font-size:12px; }
-    .src-card-meta { font-size:10px; color:var(--text-muted); margin-bottom:6px; }
-    .src-snippet { font-size:11px; color:var(--text-secondary); line-height:1.55; display:none; }
-    .src-card.active .src-snippet { display:block; }
-    .src-divider { border:none; border-top:1px solid var(--border); margin:8px 0; }
-    .lookup-section { padding:8px; flex-shrink:0; }
-    .lookup-label { font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; }
-    .lookup-row { display:flex; gap:5px; }
-    .lookup-row input { flex:1; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:6px 8px; font-size:11.5px; color:var(--text-primary); outline:none; font-family:inherit; }
-    .lookup-row input:focus { border-color:var(--accent); }
-    .btn-lookup { background:var(--accent-faint); border:1px solid var(--border-accent); border-radius:var(--r-sm); color:var(--accent-light); font-size:11.5px; padding:0 11px; cursor:pointer; font-family:inherit; white-space:nowrap; }
-    .btn-lookup:hover { background:rgba(139,92,246,.28); }
-    .lookup-result { font-size:11.5px; color:var(--text-secondary); line-height:1.6; margin-top:6px; display:none; max-height:120px; overflow-y:auto; }
-    .lookup-result.show { display:block; }
-
-    /* ══ Voice recording indicator ══ */
-    .voice-indicator { display:none; padding:4px 12px; font-size:11px; color:var(--red); text-align:center; animation:pulse 1s infinite; }
-    .voice-indicator.show { display:block; }
-  </style>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/sidebar.css"/>
+  <link rel="stylesheet" href="/assets/css/chat.css"/>
+  <link rel="stylesheet" href="/assets/css/sources.css"/>
+  <link rel="stylesheet" href="/assets/css/responsive.css"/>
 </head>
 <body>
 <div id="app">
 
   <!-- ══════════ SIDEBAR ══════════ -->
-  <aside class="rag-sidebar">
+  <aside class="rag-sidebar" id="sidebar" aria-label="Workspace và lịch sử">
     <div class="sb-logo">
       <div class="sb-logo-icon">📚</div>
       PDF RAG Assistant
@@ -236,14 +27,14 @@
     <div class="user-card" id="userCard">
       <div class="user-avatar-placeholder" id="userAvatarPlaceholder">?</div>
       <span class="user-name" id="userNameEl">Chưa đăng nhập</span>
-      <button class="btn-auth" id="btnAuth" onclick="handleAuth()">Đăng nhập</button>
+      <button class="btn-auth" id="btnAuth">Đăng nhập</button>
     </div>
 
     <!-- Chat History (hiển thị khi đã đăng nhập) -->
     <div id="historySection" style="display:none">
       <div class="sb-section-label">Lịch sử chat</div>
       <div class="history-list" id="historyList"></div>
-      <button class="hist-new-btn" onclick="newChatSession()">
+      <button class="hist-new-btn" id="btnNewChat">
         ✏️ Cuộc hội thoại mới
       </button>
     </div>
@@ -251,17 +42,17 @@
     <hr class="sb-divider"/>
 
     <!-- Workspace -->
-    <div class="sb-section-label">Workspace</div>
+    <div class="sb-section-label">Không gian tài liệu</div>
     <div class="ws-list" id="wsList"></div>
     <div class="create-ws">
-      <input id="newWsInput" placeholder="Tên workspace mới..." maxlength="50"/>
+      <input id="newWsInput" aria-label="Tên workspace mới" placeholder="Tên workspace mới..." maxlength="50"/>
       <button class="btn-new-ws" id="btnCreateWs" title="Tạo workspace">+</button>
     </div>
 
     <hr class="sb-divider"/>
 
     <!-- Upload -->
-    <div class="upload-zone" id="btnUploadZone">
+    <div class="upload-zone" id="btnUploadZone" role="button" tabindex="0" aria-label="Tải tài liệu PDF">
       <div class="uz-icon">☁️</div>
       <p>Kéo & thả PDF hoặc <span>chọn file</span></p>
     </div>
@@ -270,43 +61,45 @@
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
       <div class="progress-label" id="progressLabel"></div>
     </div>
-    <div class="upload-toast" id="uploadToast"></div>
+    <div class="upload-toast" id="uploadToast" role="status" aria-live="polite"></div>
 
     <!-- Bottom tools -->
     <div class="sb-tools">
-      <button class="tool-btn" onclick="doClearChat()">🗑️ Xóa chat hiện tại</button>
-      <button class="tool-btn danger" id="btnDeleteWs" onclick="deleteCurrentWs()">✕ Xóa workspace</button>
+      <button class="tool-btn" id="btnClearChat">🗑️ Xóa chat hiện tại</button>
+      <button class="tool-btn danger" id="btnDeleteWs">✕ Xóa workspace</button>
     </div>
   </aside>
 
   <!-- ══════════ CHAT ══════════ -->
   <main class="rag-chat">
     <div class="chat-topbar">
-      <span class="chat-topbar-title">Chat</span>
+      <button class="panel-toggle" id="btnSidebar" aria-label="Mở workspace" aria-controls="sidebar" aria-expanded="false">☰</button>
+      <span class="chat-topbar-title">Góc học tập</span>
       <span class="ws-pill" id="wsPill">—</span>
       <div class="topbar-spacer"></div>
       <button class="btn-summarize-top" id="btnSummarize">📝 Tóm tắt</button>
-      <div class="api-status">
+      <button class="panel-toggle sources-toggle" id="btnSources" aria-controls="sources" aria-expanded="false">Tài liệu</button>
+      <div class="api-status" role="status">
         <div class="api-dot" id="apiDot"></div>
         <span id="apiLabel">Đang kiểm tra...</span>
       </div>
     </div>
 
-    <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-msgs" id="chatMsgs" role="log" aria-label="Cuộc hội thoại" aria-live="polite"></div>
     <div class="voice-indicator" id="voiceIndicator">🔴 Đang lắng nghe...</div>
 
     <div class="chat-input-area">
       <div class="chat-input-box">
-        <textarea id="chatInput" rows="1" placeholder="Chọn workspace trước..."></textarea>
+        <textarea id="chatInput" aria-label="Câu hỏi về tài liệu" rows="1" placeholder="Chọn workspace trước..."></textarea>
         <div class="input-actions">
           <!-- Web Search toggle -->
-          <button class="btn-web-search" id="btnWebSearch" title="Bật / tắt Web Search">
+          <button class="btn-web-search" id="btnWebSearch" aria-pressed="false" title="Bật / tắt Web Search">
             🌐 Web Search
           </button>
           <span class="input-hint">Enter gửi · Shift+Enter xuống dòng</span>
           <!-- Voice input -->
           <button class="btn-voice" id="btnVoice" title="Nhập bằng giọng nói">🎤</button>
-          <button class="btn-send" id="btnSend">
+          <button class="btn-send" id="btnSend" aria-label="Gửi câu hỏi">
             <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
           </button>
         </div>
@@ -315,17 +108,17 @@
   </main>
 
   <!-- ══════════ SOURCES PANEL ══════════ -->
-  <aside class="rag-sources">
+  <aside class="rag-sources" id="sources" aria-label="Tài liệu tham khảo">
     <div class="src-header">
       <span class="src-header-title">📄 Tài liệu</span>
-      <span class="src-badge" id="srcBadge">0 file(s)</span>
+      <span class="src-badge" id="srcBadge">0 tài liệu</span>
     </div>
     <div class="src-list" id="srcList"></div>
     <hr class="src-divider"/>
     <div class="lookup-section">
       <div class="lookup-label">Tra thuật ngữ</div>
       <div class="lookup-row">
-        <input id="peInput" placeholder="Nhập thuật ngữ..."/>
+        <input id="peInput" aria-label="Thuật ngữ cần tra" placeholder="Nhập thuật ngữ..."/>
         <button class="btn-lookup" id="btnPanelExplain">Tra</button>
       </div>
       <div class="lookup-result" id="peResult"></div>
@@ -333,747 +126,8 @@
   </aside>
 
 </div><!-- #app -->
+<button class="panel-backdrop" id="panelBackdrop" aria-label="Đóng bảng bên"></button>
 
-<script>
-// ════════════════════════════════════════════════════════════════════════════
-//  CONFIG
-// ════════════════════════════════════════════════════════════════════════════
-const API = 'http://localhost:8000';
-
-// ════════════════════════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════════════════════════
-let workspaces    = [];
-let selectedWs    = null;
-let chatHistory   = [];   // [{role,content,citations,webResults}]
-let activeSrc     = -1;
-let currentUser   = null; // {sub,email,name,picture}
-let sessions      = [];   // chat history sessions từ backend
-let activeSession = null; // session_id đang mở
-let webSearchOn   = false;// trạng thái nút Web Search
-
-// ════════════════════════════════════════════════════════════════════════════
-//  BOOT
-// ════════════════════════════════════════════════════════════════════════════
-(async function init() {
-  bindEvents();
-  await Promise.all([checkApiHealth(), fetchCurrentUser()]);
-  await loadWorkspaces();
-  renderAll();
-})();
-
-// ════════════════════════════════════════════════════════════════════════════
-//  BIND EVENTS
-// ════════════════════════════════════════════════════════════════════════════
-function bindEvents() {
-  document.getElementById('btnCreateWs').addEventListener('click', createWs);
-  document.getElementById('btnSummarize').addEventListener('click', doSummarize);
-  document.getElementById('btnUploadZone').addEventListener('click', triggerUpload);
-  document.getElementById('btnSend').addEventListener('click', sendMsg);
-  document.getElementById('btnPanelExplain').addEventListener('click', doPanelExplain);
-  document.getElementById('btnWebSearch').addEventListener('click', toggleWebSearch);
-  document.getElementById('btnVoice').addEventListener('click', toggleVoice);
-
-  document.getElementById('newWsInput').addEventListener('keydown', e => { if (e.key === 'Enter') createWs(); });
-  document.getElementById('peInput').addEventListener('keydown', e => { if (e.key === 'Enter') doPanelExplain(); });
-
-  const ta = document.getElementById('chatInput');
-  ta.addEventListener('input', () => autoH(ta));
-  ta.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-  });
-
-  document.getElementById('wsList').addEventListener('click', e => {
-    const item = e.target.closest('.ws-item');
-    if (item) selectWs(item.dataset.wsName);
-  });
-  document.getElementById('srcList').addEventListener('click', e => {
-    const card = e.target.closest('.src-card');
-    if (card) toggleSrc(parseInt(card.dataset.srcIdx));
-  });
-  document.getElementById('chatMsgs').addEventListener('click', e => {
-    const chip = e.target.closest('.cite-chip');
-    if (chip) highlightSrc(chip.dataset.fileName);
-    const wc = e.target.closest('.web-chip');
-    if (wc) window.open(wc.dataset.url, '_blank');
-    const tts = e.target.closest('.btn-tts');
-    if (tts) speakText(tts.dataset.text, tts);
-  });
-
-  const fi = document.getElementById('fileInput');
-  fi.addEventListener('change', () => uploadFiles(fi.files));
-  const zone = document.getElementById('btnUploadZone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('dragover');
-    uploadFiles(e.dataTransfer.files);
-  });
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  GOOGLE AUTH
-// ════════════════════════════════════════════════════════════════════════════
-async function fetchCurrentUser() {
-  try {
-    const r = await fetch(`${API}/auth/me`);
-    const d = await r.json();
-    currentUser = d.user || null;
-    renderUserCard();
-    if (currentUser) await loadSessions();
-  } catch { currentUser = null; }
-}
-
-function renderUserCard() {
-  const nameEl  = document.getElementById('userNameEl');
-  const btnAuth = document.getElementById('btnAuth');
-  const histSec = document.getElementById('historySection');
-  const placeholder = document.getElementById('userAvatarPlaceholder');
-
-  // Xóa avatar cũ nếu có
-  const existingImg = document.getElementById('userAvatarImg');
-  if (existingImg) existingImg.remove();
-
-  if (currentUser) {
-    nameEl.textContent  = currentUser.name || currentUser.email;
-    btnAuth.textContent = 'Đăng xuất';
-    histSec.style.display = '';
-
-    if (currentUser.picture) {
-      const img = document.createElement('img');
-      img.id = 'userAvatarImg';
-      img.src = currentUser.picture;
-      img.className = 'user-avatar';
-      img.alt = '';
-      placeholder.replaceWith(img);
-    }
-  } else {
-    nameEl.textContent  = 'Chưa đăng nhập';
-    btnAuth.textContent = 'Đăng nhập Google';
-    histSec.style.display = 'none';
-  }
-}
-
-function handleAuth() {
-  if (currentUser) {
-    window.location.href = `${API}/auth/logout`;
-  } else {
-    window.location.href = `${API}/auth/login`;
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  CHAT HISTORY (sessions)
-// ════════════════════════════════════════════════════════════════════════════
-async function loadSessions() {
-  if (!currentUser) { sessions = []; renderHistoryList(); return; }
-  try {
-    const r = await fetch(`${API}/api/history/sessions`);
-    sessions = r.ok ? await r.json() : [];
-  } catch { sessions = []; }
-  renderHistoryList();
-}
-
-function renderHistoryList() {
-  const el = document.getElementById('historyList');
-  if (!sessions.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 8px">Chưa có lịch sử</div>';
-    return;
-  }
-  el.innerHTML = sessions.map(s => `
-    <div class="hist-item ${s.session_id === activeSession ? 'active' : ''}"
-         data-sid="${esc(s.session_id)}" onclick="loadSession('${esc(s.session_id)}')">
-      <span style="font-size:11px">💬</span>
-      <span class="hist-item-name" title="${esc(s.title)}">${esc(s.title)}</span>
-      <span class="hist-item-del" title="Xóa" onclick="deleteSession(event,'${esc(s.session_id)}')">✕</span>
-    </div>`).join('');
-}
-
-async function newChatSession() {
-  if (!currentUser || !selectedWs) {
-    showToast('⚠️ Chọn workspace trước!', true); return;
-  }
-  try {
-    const r = await fetch(`${API}/api/history/sessions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspace_name: selectedWs, title: 'Cuộc hội thoại mới' })
-    });
-    const sess = await r.json();
-    activeSession = sess.session_id;
-    chatHistory   = [];
-    await loadSessions();
-    renderChat();
-  } catch (e) { showToast('Lỗi tạo session: ' + e.message, true); }
-}
-
-async function loadSession(sid) {
-  try {
-    const r = await fetch(`${API}/api/history/sessions/${sid}`);
-    if (!r.ok) return;
-    const sess = await r.json();
-    activeSession = sid;
-
-    // Tìm và switch workspace
-    const ws = sess.workspace_name;
-    if (ws && ws !== selectedWs) {
-      selectedWs = ws; activeSrc = -1;
-      await reloadWsFiles(ws);
-      renderWsList(); renderSources();
-    }
-
-    chatHistory = (sess.messages || []).map(m => ({
-      role:       m.role,
-      content:    m.content,
-      citations:  m.citations || [],
-      webResults: [],
-    }));
-
-    renderHistoryList(); renderChat();
-  } catch (e) { showToast('Lỗi tải session', true); }
-}
-
-async function persistSession() {
-  if (!currentUser || !activeSession) return;
-  // Đặt tiêu đề từ tin nhắn user đầu tiên
-  const firstUser = chatHistory.find(m => m.role === 'user');
-  const title = firstUser ? firstUser.content.replace(/<[^>]*>/g, '').substring(0, 40) : 'Cuộc hội thoại';
-  try {
-    await fetch(`${API}/api/history/sessions/${activeSession}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: activeSession,
-        title,
-        messages: chatHistory.map(m => ({
-          role:      m.role,
-          content:   m.content,
-          citations: m.citations || [],
-        }))
-      })
-    });
-    await loadSessions();
-  } catch {}
-}
-
-async function deleteSession(evt, sid) {
-  evt.stopPropagation();
-  try {
-    await fetch(`${API}/api/history/sessions/${sid}`, { method: 'DELETE' });
-    if (activeSession === sid) { activeSession = null; chatHistory = []; renderChat(); }
-    await loadSessions();
-  } catch {}
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  WEB SEARCH TOGGLE
-// ════════════════════════════════════════════════════════════════════════════
-function toggleWebSearch() {
-  webSearchOn = !webSearchOn;
-  const btn = document.getElementById('btnWebSearch');
-  btn.classList.toggle('active', webSearchOn);
-  btn.title = webSearchOn ? 'Web Search đang BẬT — nhấn để tắt' : 'Bật Web Search';
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  VOICE — Web Speech API
-// ════════════════════════════════════════════════════════════════════════════
-let recognition = null;
-let isRecording = false;
-
-function toggleVoice() {
-  if (isRecording) { stopRecognition(); return; }
-  startRecognition();
-}
-
-function startRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    showToast('⚠️ Trình duyệt không hỗ trợ nhận dạng giọng nói', true); return;
-  }
-
-  recognition = new SpeechRecognition();
-  recognition.lang        = 'vi-VN';
-  recognition.continuous  = false;
-  recognition.interimResults = true;
-
-  const ta  = document.getElementById('chatInput');
-  const btn = document.getElementById('btnVoice');
-  const ind = document.getElementById('voiceIndicator');
-
-  isRecording = true;
-  btn.classList.add('recording');
-  btn.title = 'Dừng ghi âm';
-  btn.textContent = '⏹';
-  ind.classList.add('show');
-
-  recognition.onresult = e => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-    ta.value = transcript;
-    autoH(ta);
-  };
-
-  recognition.onend = () => {
-    isRecording = false;
-    btn.classList.remove('recording');
-    btn.title = 'Nhập bằng giọng nói';
-    btn.textContent = '🎤';
-    ind.classList.remove('show');
-    // Tự động gửi nếu có nội dung
-    if (ta.value.trim()) sendMsg();
-  };
-
-  recognition.onerror = e => {
-    stopRecognition();
-    showToast('Lỗi ghi âm: ' + e.error, true);
-  };
-
-  recognition.start();
-}
-
-function stopRecognition() {
-  if (recognition) { recognition.stop(); recognition = null; }
-  isRecording = false;
-  const btn = document.getElementById('btnVoice');
-  btn.classList.remove('recording');
-  btn.textContent = '🎤';
-  btn.title = 'Nhập bằng giọng nói';
-  document.getElementById('voiceIndicator').classList.remove('show');
-}
-
-// ── Text-to-Speech ───────────────────────────────────────────────────────────
-let currentUtterance = null;
-
-function speakText(text, btnEl) {
-  if (!window.speechSynthesis) return;
-
-  // Nếu đang đọc → dừng lại
-  if (currentUtterance) {
-    window.speechSynthesis.cancel();
-    currentUtterance = null;
-    document.querySelectorAll('.btn-tts').forEach(b => b.classList.remove('speaking'));
-    if (btnEl._wasSpeaking) { btnEl._wasSpeaking = false; return; }
-  }
-
-  const clean = text.replace(/<[^>]*>/g, '');
-  const utt   = new SpeechSynthesisUtterance(clean);
-  utt.lang  = 'vi-VN';
-  utt.rate  = 1.0;
-  utt.pitch = 1.0;
-
-  // Tìm giọng tiếng Việt nếu có
-  const voices = window.speechSynthesis.getVoices();
-  const viVoice = voices.find(v => v.lang.startsWith('vi'));
-  if (viVoice) utt.voice = viVoice;
-
-  utt.onstart = () => { btnEl.classList.add('speaking'); btnEl._wasSpeaking = true; };
-  utt.onend   = () => { btnEl.classList.remove('speaking'); btnEl._wasSpeaking = false; currentUtterance = null; };
-  utt.onerror = () => { btnEl.classList.remove('speaking'); currentUtterance = null; };
-
-  currentUtterance = utt;
-  window.speechSynthesis.speak(utt);
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  SEND MESSAGE (hỗ trợ cả RAG và Web Search)
-// ════════════════════════════════════════════════════════════════════════════
-async function sendMsg() {
-  const inp = document.getElementById('chatInput');
-  const q   = inp.value.trim();
-  if (!q || !selectedWs) return;
-  inp.value = ''; autoH(inp);
-
-  chatHistory.push({ role: 'user', content: esc(q), citations: [], webResults: [] });
-  renderChat(); addTyping();
-
-  try {
-    let r, d;
-    if (webSearchOn) {
-      // ── Chế độ Web Search ──
-      r = await fetch(`${API}/api/chat/web`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, workspace_name: selectedWs, top_k: 5 })
-      });
-      d = await r.json(); rmTyping();
-      if (!r.ok) {
-        chatHistory.push({ role:'assistant', content:`❌ Lỗi: ${d.detail||'Không rõ'}`, citations:[], webResults:[] });
-      } else {
-        chatHistory.push({
-          role:'assistant',
-          content: d.answer || 'Không nhận được câu trả lời.',
-          citations: d.citations || [],
-          webResults: d.web_results || [],
-          isWeb: true,
-        });
-      }
-    } else {
-      // ── Chế độ RAG thuần ──
-      r = await fetch(`${API}/api/chat`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ question:q, workspace_name:selectedWs, top_k:5 })
-      });
-      d = await r.json(); rmTyping();
-      if (!r.ok) {
-        chatHistory.push({ role:'assistant', content:`❌ Lỗi Server: ${d.detail||'Không rõ'}`, citations:[], webResults:[] });
-      } else {
-        chatHistory.push({ role:'assistant', content: d.answer||'Không có câu trả lời.', citations: d.citations||[], webResults:[] });
-      }
-    }
-  } catch (e) {
-    rmTyping();
-    chatHistory.push({ role:'assistant', content:`❌ Lỗi kết nối: ${e.message}`, citations:[], webResults:[] });
-  }
-
-  renderChat();
-  await persistSession(); // tự động lưu nếu đã đăng nhập
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  RENDER
-// ════════════════════════════════════════════════════════════════════════════
-function renderAll() { renderWsList(); renderChat(); renderSources(); }
-
-function renderWsList() {
-  const el = document.getElementById('wsList');
-  if (!workspaces.length) {
-    el.innerHTML = '<div class="ws-empty-hint">Chưa có workspace nào</div>'; return;
-  }
-  el.innerHTML = workspaces.map(w => `
-    <div class="ws-item ${w.name===selectedWs?'active':''}" data-ws-name="${esc(w.name)}">
-      <span>${w.name===selectedWs?'📂':'📁'}</span>
-      <span class="ws-item-name">${esc(w.name)}</span>
-      <span class="ws-item-count">${w.file_count}</span>
-    </div>`).join('');
-}
-
-function renderChat() {
-  updatePill();
-  const el = document.getElementById('chatMsgs');
-  if (!selectedWs) {
-    el.innerHTML = `<div class="welcome"><div class="w-icon">📚</div><h2>PDF RAG Assistant</h2><p>Tạo hoặc chọn một <strong>Workspace</strong> bên trái để bắt đầu.</p></div>`;
-    return;
-  }
-  if (!chatHistory.length) {
-    const SAMPLES = ['📌 Tóm tắt nội dung chính','❓ Giải thích khái niệm quan trọng','📊 So sánh các phương pháp','🔍 Tra cứu ví dụ minh họa'];
-    el.innerHTML = `<div class="welcome">
-      <div class="w-icon" style="font-size:38px">💬</div>
-      <h2>${esc(selectedWs)}</h2>
-      <p>Upload PDF, sau đó đặt câu hỏi về nội dung tài liệu.</p>
-      <div class="welcome-chips">
-        ${SAMPLES.map(q=>`<div class="welcome-chip" onclick="prefillQ('${q.replace(/'/g,"\\'")}')">${q}</div>`).join('')}
-      </div>
-    </div>`;
-    return;
-  }
-  el.innerHTML = chatHistory.map(msgHTML).join('');
-  el.scrollTop = el.scrollHeight;
-}
-
-function msgHTML(m) {
-  const isUser = m.role === 'user';
-  const av     = isUser ? '<div class="av user">M</div>' : '<div class="av bot">✦</div>';
-
-  // Nút TTS cho tin nhắn bot
-  const ttsBtn = !isUser
-    ? `<button class="btn-tts" data-text="${esc(m.content)}" title="Đọc to">🔊</button>`
-    : '';
-
-  const webBadge = m.isWeb ? ' web-tag' : '';
-  const bub = `<div class="bub ${isUser?'user':'bot'+webBadge}">${m.content}${ttsBtn}</div>`;
-
-  // Citation chips (từ tài liệu)
-  const citeChips = (!isUser && m.citations?.length)
-    ? `<div class="cite-chips">${m.citations.map(c=>
-        `<span class="cite-chip" data-file-name="${esc(c.file_name)}">
-          📄 ${esc(c.file_name)} · Tr.${c.page}${c.heading?' · '+esc(c.heading):''}
-        </span>`).join('')}</div>`
-    : '';
-
-  // Web result chips
-  const webChips = (!isUser && m.webResults?.length)
-    ? `<div class="web-chips">${m.webResults.slice(0,3).map(w=>
-        `<span class="web-chip" data-url="${esc(w.url)}" title="${esc(w.url)}">🌐 ${esc(w.title.substring(0,30))}...</span>`
-      ).join('')}</div>`
-    : '';
-
-  const body = `<div style="display:flex;flex-direction:column;gap:5px;max-width:76%">${bub}${citeChips}${webChips}</div>`;
-  return `<div class="msg ${isUser?'user':''}">${isUser ? body+av : av+body}</div>`;
-}
-
-function addTyping() {
-  const el = document.getElementById('chatMsgs');
-  const d  = document.createElement('div');
-  d.className = 'msg'; d.id = 'typing';
-  d.innerHTML = '<div class="av bot">✦</div><div class="bub bot"><div class="typing"><span></span><span></span><span></span></div></div>';
-  el.appendChild(d); el.scrollTop = el.scrollHeight;
-}
-function rmTyping() { document.getElementById('typing')?.remove(); }
-
-function renderSources() {
-  updatePill();
-  const ws    = workspaces.find(w => w.name === selectedWs);
-  const files = ws?.files || [];
-  document.getElementById('srcBadge').textContent = `${files.length} file(s)`;
-  const list = document.getElementById('srcList');
-  if (!files.length) {
-    list.innerHTML = `<div class="src-empty"><div class="src-empty-icon">📂</div><div>Chưa có tài liệu nào.<br/>Upload PDF ở sidebar để bắt đầu.</div></div>`;
-    return;
-  }
-  list.innerHTML = files.map((f,i) => {
-    const name = f.name||f;
-    return `<div class="src-card ${i===activeSrc?'active':''}" id="sc${i}" data-src-idx="${i}">
-      <div class="src-card-name"><span class="pdf-ico">📕</span>${esc(name)}</div>
-      <div class="src-card-meta">${f.page_count?f.page_count+' trang · ':''}${f.chunk_count?f.chunk_count+' chunks':''}</div>
-      <div class="src-snippet">${f.snippet||'Nhấn để xem trích đoạn liên quan.'}</div>
-    </div>`;
-  }).join('');
-}
-
-function toggleSrc(i) { activeSrc = activeSrc===i ? -1 : i; renderSources(); }
-
-function highlightSrc(fileName) {
-  const ws = workspaces.find(w=>w.name===selectedWs);
-  const files = ws?.files||[];
-  const i = files.findIndex(f=>(f.name||f)===fileName);
-  if (i>=0) { activeSrc=i; renderSources(); document.getElementById(`sc${i}`)?.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  SUMMARIZE
-// ════════════════════════════════════════════════════════════════════════════
-async function doSummarize() {
-  if (!selectedWs) {
-    showToast('⚠️ Vui lòng chọn một workspace trước khi tóm tắt!', true);
-    return;
-  }
-
-  // Khởi tạo request payload mặc định cho Workspace
-  const payload = {
-    workspace_name: selectedWs,
-    file_name: null // Mặc định là null để tóm tắt toàn bộ tài liệu trong workspace
-  };
-
-  // KIỂM TRA: Nếu người dùng đang active (chọn xem) một file cụ thể ở bên phải
-  // (Dựa trên biến activeSrc lưu vị trí index của file đang chọn trong mảng tài liệu)
-  const srcCards = document.querySelectorAll('#srcList .src-card');
-  const activeCard = document.querySelector('#srcList .src-card.active');
-  
-  if (activeCard) {
-    // Lấy tên file trực tiếp từ thuộc tính data của card đang active
-    const activeFileName = activeCard.querySelector('.src-card-name').textContent.replace('📄', '').trim();
-    if (activeFileName) {
-      payload.file_name = activeFileName;
-    }
-  }
-
-  // Hiển thị trạng thái đang xử lý (Typing indicator) trong khung chat
-  appendBotTyping();
-
-  try {
-    const response = await fetch(`${API}/api/summarize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    removeBotTyping();
-
-    if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData.detail || 'Lỗi hệ thống');
-    }
-
-    const data = await response.json();
-    
-    // Đẩy kết quả tóm tắt vào khung chat
-    const titleHeader = payload.file_name 
-      ? `📋 **Bản tóm tắt tài liệu: ${payload.file_name}**\n\n`
-      : `📋 **Bản tóm tắt tổng quan Workspace [${selectedWs}]**\n\n`;
-
-    chatHistory.push({
-      role: 'assistant',
-      content: titleHeader + data.summary,
-      citations: []
-    });
-
-    renderChat();
-    if (currentUser) persistSession();
-
-  } catch (error) {
-    removeBotTyping();
-    showToast('❌ Không thể tóm tắt: ' + error.message, true);
-  }
-}
-
-// ── Hàm bổ trợ hiển thị trạng thái chờ phản hồi ──
-function appendBotTyping() {
-  const chatMsgs = document.getElementById('chatMsgs');
-  const typingDiv = document.createElement('div');
-  typingDiv.id = 'botTypingIndicator';
-  typingDiv.className = 'msg';
-  typingDiv.innerHTML = `
-    <div class="av bot">🤖</div>
-    <div class="bub bot">
-      <div class="typing"><span></span><span></span><span></span></div>
-    </div>
-  `;
-  chatMsgs.appendChild(typingDiv);
-  chatMsgs.scrollTop = chatMsgs.scrollHeight;
-}
-
-function removeBotTyping() {
-  const indicator = document.getElementById('botTypingIndicator');
-  if (indicator) indicator.remove();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  TERM LOOKUP
-// ════════════════════════════════════════════════════════════════════════════
-async function doPanelExplain() {
-  const term = document.getElementById('peInput').value.trim();
-  const res  = document.getElementById('peResult');
-  if (!term||!selectedWs) { showToast('⚠️ Nhập thuật ngữ và chọn workspace!',true); return; }
-  res.textContent = 'Đang tra cứu...'; res.classList.add('show');
-  try {
-    const r = await fetch(`${API}/api/explain`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({term,workspace_name:selectedWs})});
-    const d = await r.json();
-    res.innerHTML = `<strong>${esc(term)}:</strong> ${d.explanation||'Không tìm thấy.'}`;
-  } catch(e) { res.textContent='Lỗi: '+e.message; }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  API HEALTH
-// ════════════════════════════════════════════════════════════════════════════
-async function checkApiHealth() {
-  const dot=document.getElementById('apiDot'), label=document.getElementById('apiLabel');
-  try {
-    const r = await fetch(`${API}/health`,{signal:AbortSignal.timeout(3000)});
-    if (r.ok){dot.className='api-dot ok';label.textContent='API online';}else throw new Error();
-  } catch { dot.className='api-dot err'; label.textContent='API offline'; }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  WORKSPACES
-// ════════════════════════════════════════════════════════════════════════════
-async function loadWorkspaces() {
-  try {
-    const r = await fetch(`${API}/api/workspaces`);
-    if (!r.ok) throw new Error();
-    const raw = await r.json();
-    workspaces = await Promise.all(raw.map(async ws => {
-      try {
-        const fr = await fetch(`${API}/api/workspaces/${encodeURIComponent(ws.name)}/files`);
-        const files = fr.ok ? await fr.json() : [];
-        return {...ws, files: files.map(f=>typeof f==='string'?{name:f}:f)};
-      } catch { return {...ws, files:[]}; }
-    }));
-  } catch { workspaces=[]; }
-}
-
-async function selectWs(name) {
-  if (name===selectedWs) return;
-  selectedWs=name; chatHistory=[]; activeSrc=-1; activeSession=null;
-  await reloadWsFiles(name);
-  renderAll();
-}
-
-async function reloadWsFiles(name) {
-  const idx = workspaces.findIndex(w=>w.name===name);
-  if (idx<0) return;
-  try {
-    const r = await fetch(`${API}/api/workspaces/${encodeURIComponent(name)}/files`);
-    const files = r.ok ? await r.json() : [];
-    workspaces[idx].files      = files.map(f=>typeof f==='string'?{name:f}:f);
-    workspaces[idx].file_count = files.length;
-  } catch {}
-}
-
-async function createWs() {
-  const inp  = document.getElementById('newWsInput');
-  const name = inp.value.trim();
-  if (!name) return;
-  inp.value = '';
-  try {
-    const r = await fetch(`${API}/api/workspaces`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
-    if (r.status===201||r.ok) {
-      await loadWorkspaces();
-      selectedWs=name; chatHistory=[]; activeSrc=-1;
-      renderAll(); showToast(`✅ Đã tạo workspace "${name}"`,false);
-    } else { showToast('❌ Không tạo được workspace',true); }
-  } catch { showToast('❌ Lỗi kết nối tới server',true); }
-}
-
-async function deleteCurrentWs() {
-  if (!selectedWs) return;
-  if (!confirm(`Xóa workspace "${selectedWs}"?`)) return;
-  try {
-    await fetch(`${API}/api/workspaces/${encodeURIComponent(selectedWs)}`,{method:'DELETE'});
-    selectedWs=null; chatHistory=[]; activeSrc=-1;
-    await loadWorkspaces(); renderAll();
-    showToast('✅ Đã xóa workspace',false);
-  } catch(e) { showToast('Lỗi: '+e.message,true); }
-}
-
-function doClearChat() { chatHistory=[]; activeSession=null; renderChat(); }
-
-// ════════════════════════════════════════════════════════════════════════════
-//  UPLOAD PDF
-// ════════════════════════════════════════════════════════════════════════════
-function triggerUpload() {
-  if (!selectedWs) { showToast('⚠️ Chọn workspace trước!',true); return; }
-  document.getElementById('fileInput').click();
-}
-
-async function uploadFiles(fileList) {
-  if (!fileList||!fileList.length) return;
-  if (!selectedWs) { showToast('⚠️ Chọn workspace trước!',true); return; }
-  const progress=document.getElementById('uploadProgress'),bar=document.getElementById('progressBar'),lbl=document.getElementById('progressLabel');
-  let done=0; const total=fileList.length;
-  progress.classList.add('show'); bar.style.width='0%';
-  for (const file of fileList) {
-    lbl.textContent=`Upload: ${file.name} (${done+1}/${total})...`;
-    bar.style.width=`${Math.round((done/total)*90)}%`;
-    const fd=new FormData(); fd.append('file',file); fd.append('workspace_name',selectedWs);
-    try {
-      const r=await fetch(`${API}/api/upload`,{method:'POST',body:fd});
-      const res=await r.json();
-      if (res.status==='success'){done++;showToast(`✅ ${res.file_name}: ${res.chunk_count} chunks · ${res.page_count} trang`,false);}
-      else showToast(`❌ ${file.name}: ${res.detail||'Upload thất bại'}`,true);
-    } catch { showToast(`❌ ${file.name}: Lỗi kết nối`,true); }
-  }
-  bar.style.width='100%'; lbl.textContent=`Hoàn thành ${done}/${total} file`;
-  setTimeout(()=>progress.classList.remove('show'),2000);
-  document.getElementById('fileInput').value='';
-  await reloadWsFiles(selectedWs); renderWsList(); renderSources();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════════════════════════
-function updatePill() {
-  document.getElementById('wsPill').textContent = selectedWs||'—';
-  document.getElementById('chatInput').placeholder = selectedWs?`Hỏi về "${selectedWs}"...`:'Chọn workspace trước...';
-}
-
-function prefillQ(q) {
-  const ta=document.getElementById('chatInput'); ta.value=q; ta.focus(); autoH(ta);
-}
-
-let _toastTimer=null;
-function showToast(msg,isError=false,ms=5000) {
-  const t=document.getElementById('uploadToast');
-  t.textContent=msg; t.className='upload-toast show'+(isError?' error':'');
-  clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>t.classList.remove('show'),ms);
-}
-
-function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function autoH(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-</script>
+<script type="module" src="/assets/js/app.js"></script>
 </body>
 </html>
